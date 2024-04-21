@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Table PDF</title>
+    <style>
+        body {
+            margin: 0px;
+        }
+        *{
+            box-sizing: border-box;
+        }
+        .img_control {
+            width: 33.33%;
+            float: left;
+            box-sizing: border-box;
+        }
+        .img_control img {
+            max-width: 100%;
+            height: auto;
+        }
+        .text_control p {
+            margin-left: 70%;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        .center_div {
+            margin-top: 80px;
+            margin-left: 45%;
+        }
+        .total_sum {
+            margin-left: 80%;
+        }
+        .total_sum p {
+            border: 1px solid black;
+            padding: 2px;
+        }
+        footer {
+            margin-top: 19%;
+        }
+        .signature {
+            margin-left: 70%;
+        }
+        .date_block {
+            margin-bottom: -4%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="img_control">
+            <img src="https://nikita-endeka2004.github.io/img/mg-viz-06-maket_v15.png">
+        </div>
+        <div class="text_control">
+            <p><b>Клієнт:</b> {{lastUser.fio}}</p>
+            <p><b>Номер автівки:</b> {{lastUser.car_number}} </p>
+            <p><b>VIN:</b> {{lastUser.vin}} </p>
+        </div>
+    </div>
+    <div class="center_div">
+        <p><b>Номер документу:</b> {{lastUser.id}} </p>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>№</th>
+                <th>Проведена робота</th>
+                <th>Кількість</th>
+                <th>Вартість</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in data %}
+            <tr>
+
+                <td>{{ row.id }}</td>
+                <td>{{ row.work }}</td>
+                <td>{{ row.count }}</td>
+                <td>{{ row.amount }} грн</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="total_sum">
+        <p><b>Разом:</b> {{totalCost}} грн</p>
+    </div>
+    <footer>
+        <div class="date_block">
+            <p><b>Дата:</b> {{currentDate}}</p>
+        </div>
+        <div class="signature">
+            <p><b>Підпис: ______________________</b></p>
+        </div>
+    </footer>
+</body>
+</html>
