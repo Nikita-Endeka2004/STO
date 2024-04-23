@@ -5,12 +5,13 @@ import tkinter as tk
 import subprocess
 import re
 import os
+from pathlib import Path
 
 def main():
 
     def postUser():
-      vin = vin_entry.get()
-      car_number = car_number_entry.get()
+      vin = vin_entry.get().upper()
+      car_number = car_number_entry.get().upper()
       fio = fio_entry.get()
       date = datetime.now().strftime("%Y-%m-%d %H:%M")
 
@@ -27,7 +28,9 @@ def main():
       count_entry.delete(0, tk.END)
       validate_entries()
       last_id = get_last_inserted_user_id()
-      post_to_database_works(work, amount, count, last_id)
+      if (len(work) | len(amount) | len(amount)) > 0 :
+          post_to_database_works(work, amount, count, last_id)
+
       getWork_entry = get_all_from_works(last_id)
 
       scrollbar.pack(side="right", fill="y")
@@ -42,9 +45,48 @@ def main():
           text_widget.insert(tk.END, f"{str(data[2])}, ", "normal")  # Обычный стиль текста
           text_widget.insert(tk.END, "Кількість: ", "bold")  # Жирный стиль текста
           text_widget.insert(tk.END, f"{str(data[3])}\n", "normal")  # Обычный стиль текста
+          refresh_button = tk.Button(text_widget, text="Оновити", command=lambda index=i: refresh_entry(int(data[0])))
+          text_widget.window_create(tk.END, window=refresh_button)
           # Добавляем разделитель между строками, кроме последней
           if i < len(getWork_entry):
               text_widget.insert(tk.END, "\n" + "-" * 80 + "\n")
+
+    def refresh_entry(index):
+        def update_data():
+            # Get values from entry widgets
+            work = work_entry.get()
+            amount = amount_entry.get()
+            count = count_entry.get()
+            update_one_in_works(index, work, amount, count)
+            work_data()
+            temp.destroy()
+
+        # Destroy existing widgets
+
+        data = get_one_from_works_json(index)
+
+        temp = tk.Toplevel(root)  # Создание дочернего окна
+        temp.geometry("400x300")
+
+        # Create labels and entry widgets for each parameter
+        tk.Label(temp, text="Робота:").grid(row=0, column=0, sticky="w")
+        work_entry = tk.Entry(temp)
+        work_entry.grid(row=0, column=1)
+        work_entry.insert(0, data["work"])
+
+        tk.Label(temp, text="Вартість:").grid(row=1, column=0, sticky="w")
+        amount_entry = tk.Entry(temp)
+        amount_entry.grid(row=1, column=1)
+        amount_entry.insert(0, str(data["amount"]))
+
+        tk.Label(temp, text="Кількість:").grid(row=2, column=0, sticky="w")
+        count_entry = tk.Entry(temp)
+        count_entry.grid(row=2, column=1)
+        count_entry.insert(0, str(data["count"]))
+
+        # Button to update data
+        update_button = tk.Button(temp, text="Оновити", command=update_data)
+        update_button.grid(row=3, columnspan=2, pady=10)
 
     def validate_entries():
       if work_entry.get() and amount_entry.get() and count_entry.get():
@@ -104,6 +146,7 @@ def main():
 
       text_widget = tk.Text(scroll_frame, wrap="word", yscrollcommand=scrollbar.set)
       text_widget.pack(side="left", fill="both", expand=True)
+      postWork()
 
 
     def show_search_screen():
@@ -111,25 +154,49 @@ def main():
         def find_files(search_term):
             results = []
             search_pattern = re.compile(rf".*{search_term}.*", flags=re.IGNORECASE)
-            for filename in os.listdir(output_directory):
-                if filename.endswith(".pdf") and search_pattern.search(filename):
-                    results.append(filename)
+            try:
+                for filename in os.listdir(output_directory):
+                    if filename.endswith(".pdf") and search_pattern.search(filename):
+                        results.append(filename)
+            except FileNotFoundError:
+                tk.messagebox.showerror("Error", "Directory not found")
             return results
 
         def search():
             search_term = entry.get()
             results = find_files(search_term)
             if results:
-                result_window = tk.Toplevel(create_find_screen)
-                result_window.geometry("500x400")
-                result_window.title("Результати пошуку")
+                # Destroy existing widgets
+                for widget in create_find_screen.pack_slaves():
+                    widget.destroy()
+
+                result_window = tk.Frame(create_find_screen)
+                result_window.grid(row=0, column=0)  # Grid layout
+                create_find_screen.geometry("600x400")
+                create_find_screen.title("Результати пошуку")
+
+                # Find the length of the longest filename
+                max_filename_length = max(len(result) for result in results)
                 for result in results:
                     file_frame = tk.Frame(result_window)
-                    file_frame.pack()
-                    label = tk.Label(file_frame, text=result)
-                    label.pack(side=tk.LEFT)
+                    file_frame.grid(column=0, sticky="w")
+
+                    # Get file path and creation time
+                    file_path = os.path.join(output_directory, result)
+                    creation_time = datetime.fromtimestamp(Path(file_path).stat().st_ctime)
+                    creation_time_str = creation_time.strftime("%d/%m/%Y")
+
+                    # Create creation time label
+                    creation_label = tk.Label(file_frame, text=creation_time_str)
+                    creation_label.grid(row=0, column=0, sticky="w")
+
+                    # Create filename label with adjusted width
+                    label = tk.Label(file_frame, text=result.ljust(max_filename_length))
+                    label.grid(row=0, column=1, sticky="w")
+
+                    # Create open button
                     open_button = tk.Button(file_frame, text="Відкрити", command=lambda file=result: open_pdf(file))
-                    open_button.pack(side=tk.LEFT)
+                    open_button.grid(row=0, column=2, sticky="e")
             else:
                 tk.messagebox.showinfo("Результати пошуку", "Нічого не знайдено")
 
@@ -138,17 +205,26 @@ def main():
             subprocess.Popen(["C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe", pdf_path])
 
         # Создаем  окно
-        create_find_screen = tk.Toplevel(root)
-        create_find_screen.title("Пошук PDF файлів")
-        create_find_screen.geometry("400x200")
-        # Добавляем поле для ввода
-        entry = tk.Entry(create_find_screen, width=50)
-        entry.pack(pady=10)
+        def find_window():
+            global create_find_screen, entry
+            create_find_screen = tk.Toplevel(root)
+            create_find_screen.title("Пошук PDF файлів")
+            create_find_screen.geometry("400x200")
+            # Добавляем поле для ввода
+            entry = tk.Entry(create_find_screen, width=50)
+            entry.pack(pady=10)
 
-        # Добавляем кнопку "Найти"
-        search_button = tk.Button(create_find_screen, text="Знайти", command=search, padx=10, pady=10)
-        search_button.pack(pady=5)
+            # Добавляем кнопку "Найти"
+            search_button = tk.Button(create_find_screen, text="Знайти", command=search, padx=10, pady=10)
+            search_button.pack(pady=5)
 
+        find_window()
+
+    def validate_entries_for_show():
+      if vin_entry.get() and car_number_entry.get() and fio_entry.get():
+          submit_button.config(state=tk.NORMAL)
+      else:
+          submit_button.config(state=tk.DISABLED)
     def show_create_screen():
       global create_screen
       create_screen = tk.Toplevel(root)  # Создание дочернего окна
@@ -158,7 +234,7 @@ def main():
       tk.Label(create_screen, text="Номер автівки:").grid(row=1, column=0)
       tk.Label(create_screen, text="ПІБ:").grid(row=2, column=0)
       
-      global vin_entry, car_number_entry, fio_entry
+      global vin_entry, car_number_entry, fio_entry, submit_button
       vin_entry = tk.Entry(create_screen, width=30)
       car_number_entry = tk.Entry(create_screen, width=30)
       fio_entry = tk.Entry(create_screen, width=30)
@@ -166,9 +242,14 @@ def main():
       vin_entry.grid(row=0, column=1)
       car_number_entry.grid(row=1, column=1)
       fio_entry.grid(row=2, column=1)
+
+      vin_entry.bind("<KeyRelease>", lambda event: validate_entries_for_show())
+      car_number_entry.bind("<KeyRelease>", lambda event: validate_entries_for_show())
+      fio_entry.bind("<KeyRelease>", lambda event: validate_entries_for_show())
       
       # Кнопка для отправки данных на сервер
       submit_button = tk.Button(create_screen, text="Далі", command=postUser, padx=10, pady=7)
+      validate_entries_for_show()
       submit_button.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
       
     # Создание основного окна

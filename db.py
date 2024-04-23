@@ -1,6 +1,29 @@
 import psycopg2
 from config import DB_CONFIG
 
+def get_one_from_works_json(id):
+    try:
+        conn = psycopg2.connect(**DB_CONFIG)
+        cur = conn.cursor()
+        cur.execute(f"SELECT * FROM works WHERE id = {id};")
+        row = cur.fetchone()
+        if row:
+            data = {"id": int(row[0]), "work": str(row[1]), "amount": float(row[2]), "count": int(row[3])}
+            return data
+        else:
+            print("Запись не найдена.")
+            return None
+    except psycopg2.Error as err:
+        print(f"Error: {err}")
+def update_one_in_works(id, work, amount, count):
+    try:
+        conn = psycopg2.connect(**DB_CONFIG)
+        cur = conn.cursor()
+        cur.execute("""UPDATE works SET work = %s, amount = %s, count = %s WHERE id = %s""", (work, amount, count, id))
+        conn.commit()
+        conn.close()
+    except psycopg2.Error as err:
+        print(f"Error: {err}")
 def get_last_inserted_user():
     try:
         conn = psycopg2.connect(**DB_CONFIG)
