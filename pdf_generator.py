@@ -10,6 +10,7 @@ def createPdfFile():
         pdf_path = os.path.join(output_directory, filename)
         subprocess.Popen(["C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe", pdf_path])
 
+
     def render_html(data, currentDate, totalCost, lastUser):
         env = Environment(loader=FileSystemLoader('D:/Table/Order/ProgramFile/STO/'))
         template = env.get_template('test.html')
@@ -28,7 +29,10 @@ def createPdfFile():
                 if not os.path.exists(output_path):  # Проверяем, существует ли файл с новым именем
                     break
                 counter += 1
-        pdfkit.from_string(html_content, output_path, configuration=pdfkit.configuration(wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"))
+        options = {
+            'enable-local-file-access': None  # Enable local file access
+        }
+        pdfkit.from_string(html_content, output_path, configuration=pdfkit.configuration(wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"), options=options)
 
     # Пример данных для таблицы
     last_id = get_last_inserted_user_id()

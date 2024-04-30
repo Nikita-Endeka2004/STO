@@ -15,7 +15,7 @@ def main():
       fio = fio_entry.get()
       date = datetime.now().strftime("%Y-%m-%d %H:%M")
 
-      # post_to_database_user(vin, car_number, fio, date)
+      post_to_database_user(vin, car_number, fio, date)
 
       work_data()
 
@@ -45,7 +45,7 @@ def main():
           text_widget.insert(tk.END, f"{str(data[2])}, ", "normal")  # Обычный стиль текста
           text_widget.insert(tk.END, "Кількість: ", "bold")  # Жирный стиль текста
           text_widget.insert(tk.END, f"{str(data[3])}\n", "normal")  # Обычный стиль текста
-          refresh_button = tk.Button(text_widget, text="Оновити", command=lambda index=i: refresh_entry(int(data[0])))
+          refresh_button = tk.Button(text_widget, text="Оновити", command=lambda index=int(data[0]): refresh_entry(index))
           text_widget.window_create(tk.END, window=refresh_button)
           # Добавляем разделитель между строками, кроме последней
           if i < len(getWork_entry):
@@ -94,6 +94,12 @@ def main():
       else:
           submit_button_work.config(state=tk.DISABLED)
 
+    def delAllWorkForm():
+        list = create_screen.grid_slaves()
+        for l in list:
+            l.destroy()
+        create_screen.destroy()
+
     def work_data():
       # Удаление всех элементов на экране
       list = create_screen.grid_slaves()
@@ -131,7 +137,7 @@ def main():
       submit_button_work.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
 
       # Кнопка для создания pdf
-      submit_button_pdf = tk.Button(create_screen, text="Створити pdf", command=createPdfFile)
+      submit_button_pdf = tk.Button(create_screen, text="Створити pdf", command=lambda: (createPdfFile(), delAllWorkForm()))
       validate_entries()
       submit_button_pdf.grid(row=4, column=0, columnspan=2)
 
